@@ -24,7 +24,7 @@ export default function ChatPanel() {
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt: `Question: ${question}` }),
+        body: JSON.stringify({ prompt: question }),
       });
       const data = await res.json();
       if (data.error) {
@@ -32,8 +32,8 @@ export default function ChatPanel() {
       } else {
         setMessages((m) => [...m, { role: "ai", text: data.answer }]);
       }
-    } catch {
-      setMessages((m) => [...m, { role: "ai", text: "Sorry, I couldn't process that. Please try again." }]);
+    } catch (err) {
+      setMessages((m) => [...m, { role: "ai", text: `Sorry, I couldn't process that. ${err.message || "Please try again."}` }]);
     }
     setLoading(false);
   };
