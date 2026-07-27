@@ -1,16 +1,16 @@
-export default async function handler(req) {
+module.exports = async function handler(req, res) {
   if (req.method !== 'POST') {
-    return new Response(JSON.stringify({ error: 'Method not allowed' }), { status: 405 });
+    return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { prompt, imageUrl } = await req.json();
+  const { prompt, imageUrl } = req.body;
   if (!prompt) {
-    return new Response(JSON.stringify({ error: 'Prompt is required' }), { status: 400 });
+    return res.status(400).json({ error: 'Prompt is required' });
   }
 
   const apiKey = process.env.VITE_GEMINI_API_KEY;
   if (!apiKey) {
-    return new Response(JSON.stringify({ error: 'Gemini API key not configured' }), { status: 500 });
+    return res.status(500).json({ error: 'Gemini API key not configured' });
   }
 
   try {
@@ -39,10 +39,8 @@ export default async function handler(req) {
     const match = text.match(/\{[\s\S]*\}/);
     const parsed = match ? JSON.parse(match[0]) : {};
 
-    return new Response(JSON.stringify(parsed), {
-      headers: { 'Content-Type': 'application/json' },
-    });
+    return res.json(parsed);
   } catch (error) {
-    return new Response(JSON.stringify({ error: error.message }), { status: 500 });
+    return res.status(500).json({ error: error.message });
   }
-}
+};
