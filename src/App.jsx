@@ -6,8 +6,8 @@ import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import ScrollToTop from './components/ScrollToTop';
-// Add page imports here
 import SiteLayout from '@/components/layout/SiteLayout';
+import AdminLayout from '@/components/admin/AdminLayout';
 import Home from '@/pages/Home';
 import Learn from '@/pages/Learn';
 import Pollution from '@/pages/Pollution';
@@ -16,11 +16,19 @@ import Finder from '@/pages/Finder';
 import Profile from '@/pages/Profile';
 import About from '@/pages/About';
 import Contact from '@/pages/Contact';
+import CheckIn from '@/pages/CheckIn';
+import Rewards from '@/pages/Rewards';
+import Challenges from '@/pages/Challenges';
+import Leaderboard from '@/pages/Leaderboard';
+import Settings from '@/pages/Settings';
+import AdminDashboard from '@/pages/admin/AdminDashboard';
+import UserManagement from '@/pages/admin/UserManagement';
+import CentreManagement from '@/pages/admin/CentreManagement';
+import QRManagement from '@/pages/admin/QRManagement';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
 
-  // Show loading spinner while checking app public settings or auth
   if (isLoadingPublicSettings || isLoadingAuth) {
     return (
       <div className="fixed inset-0 flex items-center justify-center">
@@ -29,18 +37,15 @@ const AuthenticatedApp = () => {
     );
   }
 
-  // Handle authentication errors
   if (authError) {
     if (authError.type === 'user_not_registered') {
       return <UserNotRegisteredError />;
     } else if (authError.type === 'auth_required') {
-      // Redirect to login automatically
       navigateToLogin();
       return null;
     }
   }
 
-  // Render the main app
   return (
     <Routes>
       <Route element={<SiteLayout />}>
@@ -52,15 +57,24 @@ const AuthenticatedApp = () => {
         <Route path="/profile" element={<Profile />} />
         <Route path="/about" element={<About />} />
         <Route path="/contact" element={<Contact />} />
+        <Route path="/check-in" element={<CheckIn />} />
+        <Route path="/rewards" element={<Rewards />} />
+        <Route path="/challenges" element={<Challenges />} />
+        <Route path="/leaderboard" element={<Leaderboard />} />
+        <Route path="/settings" element={<Settings />} />
+      </Route>
+      <Route element={<AdminLayout />}>
+        <Route path="/admin" element={<AdminDashboard />} />
+        <Route path="/admin/users" element={<UserManagement />} />
+        <Route path="/admin/centres" element={<CentreManagement />} />
+        <Route path="/admin/qr" element={<QRManagement />} />
       </Route>
       <Route path="*" element={<PageNotFound />} />
     </Routes>
   );
 };
 
-
 function App() {
-
   return (
     <AuthProvider>
       <QueryClientProvider client={queryClientInstance}>

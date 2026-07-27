@@ -4,6 +4,7 @@ import { Leaf, Menu, X } from "lucide-react";
 import ThemeToggle from "@/components/common/ThemeToggle";
 import LanguageSwitch from "@/components/common/LanguageSwitch";
 import { useI18n } from "@/lib/i18n";
+import { base44 } from "@/api/base44Client";
 
 const LINKS = [
   { to: "/", key: "home" },
@@ -11,6 +12,9 @@ const LINKS = [
   { to: "/pollution", key: "pollution" },
   { to: "/assistant", key: "assistant" },
   { to: "/finder", key: "finder" },
+  { to: "/rewards", key: "rewards" },
+  { to: "/challenges", key: "challenges" },
+  { to: "/leaderboard", key: "leaderboard" },
   { to: "/profile", key: "profile" },
   { to: "/about", key: "about" },
   { to: "/contact", key: "contact" },
@@ -20,6 +24,11 @@ export default function Nav() {
   const { t } = useI18n();
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    base44.auth.me().then((u) => setIsAdmin(u?.role === "admin")).catch(() => {});
+  }, []);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 24);
@@ -46,14 +55,14 @@ export default function Nav() {
             </span>
           </Link>
 
-          <div className="hidden lg:flex items-center gap-1 mx-auto">
+          <div className="hidden lg:flex items-center gap-0.5 mx-auto">
             {LINKS.map((l) => (
               <NavLink
                 key={l.to}
                 to={l.to}
                 end={l.to === "/"}
                 className={({ isActive }) =>
-                  `px-3 py-2 rounded-full text-sm font-medium transition-colors ${
+                  `px-2.5 py-2 rounded-full text-sm font-medium transition-colors ${
                     isActive ? "bg-primary/12 text-primary" : "hover:bg-primary/8 text-foreground/80"
                   }`
                 }
@@ -61,6 +70,18 @@ export default function Nav() {
                 {t(l.key)}
               </NavLink>
             ))}
+            {isAdmin && (
+              <NavLink
+                to="/admin"
+                className={({ isActive }) =>
+                  `px-2.5 py-2 rounded-full text-sm font-medium transition-colors ${
+                    isActive ? "bg-accent/12 text-accent" : "hover:bg-accent/8 text-accent"
+                  }`
+                }
+              >
+                {t("admin")}
+              </NavLink>
+            )}
           </div>
 
           <div className="ml-auto lg:ml-0 flex items-center gap-2">
@@ -95,6 +116,15 @@ export default function Nav() {
                 {t(l.key)}
               </NavLink>
             ))}
+            {isAdmin && (
+              <NavLink
+                to="/admin"
+                onClick={() => setOpen(false)}
+                className="px-4 py-3 rounded-2xl text-sm font-medium bg-accent/12 text-accent"
+              >
+                {t("admin")}
+              </NavLink>
+            )}
           </div>
         )}
       </nav>

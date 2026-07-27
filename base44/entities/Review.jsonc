@@ -1,0 +1,26 @@
+{
+  "name": "Review",
+  "type": "object",
+  "properties": {
+    "centre_id": {
+      "type": "string"
+    },
+    "centre_name": {
+      "type": "string"
+    },
+    "rating": {
+      "type": "number",
+      "default": 5
+    },
+    "comment": {
+      "type": "string"
+    },
+    "user_name": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "centre_id",
+    "rating"
+  ]
+}

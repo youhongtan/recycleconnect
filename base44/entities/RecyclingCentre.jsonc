@@ -5,6 +5,9 @@
     "name": {
       "type": "string"
     },
+    "description": {
+      "type": "string"
+    },
     "address": {
       "type": "string"
     },
@@ -26,6 +29,12 @@
     "contact": {
       "type": "string"
     },
+    "website": {
+      "type": "string"
+    },
+    "photo_url": {
+      "type": "string"
+    },
     "materials": {
       "type": "array",
       "items": {
@@ -42,6 +51,19 @@
         ]
       }
     },
+    "category": {
+      "type": "string",
+      "enum": [
+        "Mall Drop-off",
+        "Council Centre",
+        "Scrap Dealer",
+        "Community Point",
+        "E-Waste Collector",
+        "Oil Collector",
+        "Fabric Bank"
+      ],
+      "default": "Community Point"
+    },
     "pays_cash": {
       "type": "boolean",
       "default": false
@@ -53,6 +75,13 @@
     "home_collection": {
       "type": "boolean",
       "default": false
+    },
+    "qr_code_id": {
+      "type": "string"
+    },
+    "rating": {
+      "type": "number",
+      "default": 0
     }
   },
   "required": [

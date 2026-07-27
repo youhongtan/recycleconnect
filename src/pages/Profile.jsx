@@ -7,7 +7,8 @@ import Badges from "@/components/profile/Badges";
 import Missions from "@/components/profile/Missions";
 import Leaderboard from "@/components/profile/Leaderboard";
 import LogRecycleForm from "@/components/profile/LogRecycleForm";
-import { Loader2 } from "lucide-react";
+import { Loader2, Coins } from "lucide-react";
+import { Link } from "react-router-dom";
 
 export default function Profile() {
   const [user, setUser] = useState(null);
@@ -64,6 +65,18 @@ export default function Profile() {
         title={`Hello, ${profile.display_name || user.full_name || "Eco Hero"}`}
         subtitle="Every item you log turns into XP, badges and a measurable carbon saving."
       />
+      <Reveal>
+        <div className="glass orbital soft-shadow p-6 flex items-center gap-4">
+          <div className="h-14 w-14 rounded-2xl bg-primary/10 grid place-items-center">
+            <Coins className="w-7 h-7 text-primary" />
+          </div>
+          <div>
+            <p className="text-3xl font-bold text-primary">{profile.eco_points || 0}</p>
+            <p className="text-sm text-muted-foreground">Eco Points — spend on rewards</p>
+          </div>
+          <Link to="/rewards" className="ml-auto h-11 px-5 rounded-full bg-primary text-primary-foreground font-semibold inline-flex items-center">Redeem</Link>
+        </div>
+      </Reveal>
       <Reveal><ProfileStats profile={profile} /></Reveal>
       <Reveal delay={0.05}><LogRecycleForm profile={profile} onUpdate={setProfile} /></Reveal>
       <Reveal delay={0.1}><Missions /></Reveal>

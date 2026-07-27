@@ -187,3 +187,25 @@ export const RECYCLING_TREND = [
   { year: "2023", rate: 35.4 },
   { year: "2025", rate: 40.0 },
 ];
+
+export const ECO_POINTS = {
+  Plastic: 5,
+  Paper: 3,
+  Glass: 3,
+  Metal: 4,
+  Electronics: 20,
+  Batteries: 15,
+  Clothes: 5,
+  "Cooking Oil": 10,
+};
+
+export const LEVEL_THRESHOLD = 500;
+
+export function getLevel(xp) {
+  return Math.floor((xp || 0) / LEVEL_THRESHOLD) + 1;
+}
+
+export function getLevelProgress(xp) {
+  const inLevel = (xp || 0) % LEVEL_THRESHOLD;
+  return Math.round((inLevel / LEVEL_THRESHOLD) * 100);
+}

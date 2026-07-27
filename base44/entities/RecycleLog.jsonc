@@ -15,6 +15,24 @@
     },
     "notes": {
       "type": "string"
+    },
+    "centre_id": {
+      "type": "string"
+    },
+    "centre_name": {
+      "type": "string"
+    },
+    "eco_points_earned": {
+      "type": "number",
+      "default": 0
+    },
+    "source": {
+      "type": "string",
+      "enum": [
+        "manual",
+        "qr_checkin"
+      ],
+      "default": "manual"
     }
   },
   "required": [

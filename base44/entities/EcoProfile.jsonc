@@ -6,6 +6,10 @@
       "type": "number",
       "default": 0
     },
+    "eco_points": {
+      "type": "number",
+      "default": 0
+    },
     "items_recycled": {
       "type": "number",
       "default": 0
@@ -30,6 +34,18 @@
     },
     "display_name": {
       "type": "string"
+    },
+    "redeemed_rewards": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "favourite_centres": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
     }
   },
   "required": []
