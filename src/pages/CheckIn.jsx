@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useSearchParams, Link } from "react-router-dom";
-import { base44 } from "@/api/base44Client";
+import { supabase } from "@/api/supabaseClient";
 import { MATERIALS, ECO_POINTS, getLevel } from "@/lib/recycleData";
 import { getOrCreateProfile } from "@/lib/ecoProfile";
 import { MapPin, Clock, Phone, CheckCircle2, Loader2, Sparkles, ScanLine } from "lucide-react";
@@ -10,6 +10,7 @@ export default function CheckIn() {
   const centreId = params.get("centre");
   const [centre, setCentre] = useState(null);
   const [profile, setProfile] = useState(null);
+  const [user, setUser] = useState(null);
   const [selected, setSelected] = useState({});
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState(null);
@@ -18,10 +19,11 @@ export default function CheckIn() {
   useEffect(() => {
     (async () => {
       if (centreId) {
-        const c = await base44.entities.RecyclingCentre.get(centreId).catch(() => null);
+        const { data: c } = await supabase.from('recycling_centres').select('*').eq('id', centreId).maybeSingle();
         setCentre(c);
       }
-      const { profile: p } = await getOrCreateProfile();
+      const { user: u, profile: p } = await getOrCreateProfile();
+      setUser(u);
       setProfile(p);
       setLoading(false);
     })();
@@ -39,7 +41,8 @@ export default function CheckIn() {
     for (const [material, v] of entries) {
       const pts = (ECO_POINTS[material] || 5) * v.qty;
       pointsEarned += pts;
-      await base44.entities.RecycleLog.create({
+      await supabase.from('recycle_logs').insert({
+        user_id: user.id,
         material,
         quantity: v.qty,
         weight_kg: 0,
@@ -53,12 +56,12 @@ export default function CheckIn() {
     const badges = new Set(oldBadges);
     badges.add("First Recycling Action");
     if ((profile.items_recycled || 0) + totalItems >= 50) badges.add("Earth Guardian");
-    const updated = await base44.entities.EcoProfile.update(profile.id, {
+    const { data: updated } = await supabase.from('eco_profiles').update({
       xp: (profile.xp || 0) + pointsEarned * 2,
       eco_points: (profile.eco_points || 0) + pointsEarned,
       items_recycled: (profile.items_recycled || 0) + totalItems,
       badges: [...badges],
-    });
+    }).eq('id', profile.id).select().single();
     setProfile(updated);
     const newBadges = [...badges].filter((b) => !oldBadges.includes(b));
     setResult({ pointsEarned, level: getLevel(updated.xp), newBadges });
@@ -76,11 +79,11 @@ export default function CheckIn() {
     </div>
   );
 
-  if (!profile) return (
+  if (!user) return (
     <div className="max-w-2xl mx-auto px-6 py-20 text-center">
       <h1 className="text-3xl font-bold mb-4">Sign in to check in</h1>
       <p className="text-muted-foreground mb-6">Scan recycling QR codes to earn Eco Points.</p>
-      <button onClick={() => base44.auth.redirectToLogin()} className="h-12 px-8 rounded-full bg-primary text-primary-foreground font-semibold">Sign in</button>
+      <Link to="/login" className="h-12 px-8 rounded-full bg-primary text-primary-foreground font-semibold inline-flex items-center">Sign in</Link>
     </div>
   );
 

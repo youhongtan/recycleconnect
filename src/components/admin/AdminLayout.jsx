@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { Outlet, Link, NavLink } from "react-router-dom";
-import { base44 } from "@/api/base44Client";
+import { useAuth } from "@/lib/AuthContext";
 import { I18nProvider, useI18n } from "@/lib/i18n";
 import { Leaf, LayoutDashboard, Users, MapPin, QrCode, ArrowLeft, ShieldAlert, Loader2 } from "lucide-react";
 
@@ -13,16 +13,9 @@ const NAV = [
 
 function AdminContent() {
   const { t } = useI18n();
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const { isLoadingAuth, role, user } = useAuth();
 
-  useEffect(() => {
-    base44.auth.me()
-      .then((u) => { setUser(u); setLoading(false); })
-      .catch(() => setLoading(false));
-  }, []);
-
-  if (loading) {
+  if (isLoadingAuth) {
     return (
       <div className="min-h-screen grid place-items-center">
         <Loader2 className="w-6 h-6 animate-spin text-primary" />
@@ -30,7 +23,7 @@ function AdminContent() {
     );
   }
 
-  if (!user || user.role !== "admin") {
+  if (!user || role !== "admin") {
     return (
       <div className="min-h-screen grid place-items-center px-6">
         <div className="text-center max-w-md">

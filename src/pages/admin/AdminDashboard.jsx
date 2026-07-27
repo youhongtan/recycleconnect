@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { base44 } from "@/api/base44Client";
+import { supabase } from "@/api/supabaseClient";
 import { Users, Recycle, Coins, MapPin, TrendingUp } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip } from "recharts";
 import StatCard from "@/components/admin/StatCard";
@@ -11,19 +11,24 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     (async () => {
-      const [users, logs, profiles, centres] = await Promise.all([
-        base44.entities.User.list().catch(() => []),
-        base44.entities.RecycleLog.list("", 500).catch(() => []),
-        base44.entities.EcoProfile.list().catch(() => []),
-        base44.entities.RecyclingCentre.list().catch(() => []),
+      const [
+        { count: usersCount },
+        { data: logs },
+        { data: profiles },
+        { count: centresCount },
+      ] = await Promise.all([
+        supabase.from('user_roles').select('*', { count: 'exact', head: true }),
+        supabase.from('recycle_logs').select('*').limit(500),
+        supabase.from('eco_profiles').select('eco_points'),
+        supabase.from('recycling_centres').select('*', { count: 'exact', head: true }),
       ]);
       const matCount = {};
-      logs.forEach((l) => { matCount[l.material] = (matCount[l.material] || 0) + 1; });
+      (logs || []).forEach((l) => { matCount[l.material] = (matCount[l.material] || 0) + 1; });
       setStats({
-        users: users.length,
-        actions: logs.length,
-        ecoPoints: profiles.reduce((s, p) => s + (p.eco_points || 0), 0),
-        centres: centres.length,
+        users: usersCount || 0,
+        actions: logs?.length || 0,
+        ecoPoints: (profiles || []).reduce((s, p) => s + (p.eco_points || 0), 0),
+        centres: centresCount || 0,
       });
       setMaterials(Object.entries(matCount).map(([name, count]) => ({ name, count })));
       setLoading(false);

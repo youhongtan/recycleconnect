@@ -1,10 +1,10 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { Link, NavLink } from "react-router-dom";
 import { Leaf, Menu, X } from "lucide-react";
 import ThemeToggle from "@/components/common/ThemeToggle";
 import LanguageSwitch from "@/components/common/LanguageSwitch";
 import { useI18n } from "@/lib/i18n";
-import { base44 } from "@/api/base44Client";
+import { useAuth } from "@/lib/AuthContext";
 
 const LINKS = [
   { to: "/", key: "home" },
@@ -22,15 +22,12 @@ const LINKS = [
 
 export default function Nav() {
   const { t } = useI18n();
+  const { role, user, logout } = useAuth();
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false);
+  const isAdmin = role === "admin";
 
-  useEffect(() => {
-    base44.auth.me().then((u) => setIsAdmin(u?.role === "admin")).catch(() => {});
-  }, []);
-
-  useEffect(() => {
+  React.useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 24);
     onScroll();
     window.addEventListener("scroll", onScroll);

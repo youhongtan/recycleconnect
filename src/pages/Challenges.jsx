@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { base44 } from "@/api/base44Client";
+import { supabase } from "@/api/supabaseClient";
 import { getOrCreateProfile } from "@/lib/ecoProfile";
 import { Target, Trophy, Loader2, CheckCircle2 } from "lucide-react";
 
@@ -11,15 +11,16 @@ export default function Challenges() {
 
   useEffect(() => {
     (async () => {
-      const [ch, { user, profile: p }] = await Promise.all([
-        base44.entities.Challenge.filter({ active: true }),
-        getOrCreateProfile(),
-      ]);
-      setChallenges(ch);
+      const { data: ch } = await supabase.from('challenges').select('*').eq('active', true);
+      const { user, profile: p } = await getOrCreateProfile();
+      setChallenges(ch || []);
       setProfile(p);
       if (user) {
-        const userLogs = await base44.entities.RecycleLog.filter({ created_by_id: user.id });
-        setLogs(userLogs);
+        const { data: userLogs } = await supabase
+          .from('recycle_logs')
+          .select('*')
+          .eq('user_id', user.id);
+        setLogs(userLogs || []);
       }
       setLoading(false);
     })();

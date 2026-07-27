@@ -1,9 +1,11 @@
 import React, { useState } from "react";
-import { base44 } from "@/api/base44Client";
+import { supabase } from "@/api/supabaseClient";
+import { useAuth } from "@/lib/AuthContext";
 import { MATERIALS, ECO_POINTS } from "@/lib/recycleData";
 import { PlusCircle } from "lucide-react";
 
 export default function LogRecycleForm({ profile, onUpdate }) {
+  const { user } = useAuth();
   const [material, setMaterial] = useState("Plastic");
   const [weight, setWeight] = useState(0.5);
   const [busy, setBusy] = useState(false);
@@ -11,21 +13,26 @@ export default function LogRecycleForm({ profile, onUpdate }) {
   const submit = async (e) => {
     e.preventDefault();
     setBusy(true);
-    await base44.entities.RecycleLog.create({ material, quantity: 1, weight_kg: Number(weight) });
+    await supabase.from('recycle_logs').insert({
+      user_id: user.id,
+      material,
+      quantity: 1,
+      weight_kg: Number(weight),
+    });
     const ecoPoints = ECO_POINTS[material] || 5;
     const badges = new Set(profile.badges || []);
     badges.add("First Drop");
     if (material === "Electronics") badges.add("E-Waste Hero");
     if (material === "Cooking Oil") badges.add("Oil Saver");
     if ((profile.items_recycled || 0) + 1 >= 50) badges.add("Earth Guardian");
-    const updated = await base44.entities.EcoProfile.update(profile.id, {
+    const { data: updated } = await supabase.from('eco_profiles').update({
       xp: (profile.xp || 0) + ecoPoints * 2,
       eco_points: (profile.eco_points || 0) + ecoPoints,
       items_recycled: (profile.items_recycled || 0) + 1,
       plastic_saved_kg: (profile.plastic_saved_kg || 0) + (material === "Plastic" ? Number(weight) : 0),
       co2_reduced_kg: Number(((profile.co2_reduced_kg || 0) + Number(weight) * 1.5).toFixed(2)),
       badges: [...badges],
-    });
+    }).eq('id', profile.id).select().single();
     onUpdate(updated);
     setBusy(false);
   };

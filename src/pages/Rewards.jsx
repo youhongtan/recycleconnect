@@ -1,21 +1,21 @@
 import React, { useEffect, useState } from "react";
-import { base44 } from "@/api/base44Client";
+import { supabase } from "@/api/supabaseClient";
 import { getOrCreateProfile } from "@/lib/ecoProfile";
 import { Coins, Gift, Check, Loader2 } from "lucide-react";
 
 export default function Rewards() {
   const [rewards, setRewards] = useState([]);
   const [profile, setProfile] = useState(null);
+  const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [redeeming, setRedeeming] = useState(null);
 
   useEffect(() => {
     (async () => {
-      const [rewardsData, { profile: p }] = await Promise.all([
-        base44.entities.Reward.filter({ available: true }),
-        getOrCreateProfile(),
-      ]);
-      setRewards(rewardsData);
+      const { data: rewardsData } = await supabase.from('rewards').select('*').eq('available', true);
+      const { user: u, profile: p } = await getOrCreateProfile();
+      setRewards(rewardsData || []);
+      setUser(u);
       setProfile(p);
       setLoading(false);
     })();
@@ -26,10 +26,10 @@ export default function Rewards() {
     setRedeeming(reward.id);
     const redeemed = new Set(profile.redeemed_rewards || []);
     redeemed.add(reward.id);
-    const updated = await base44.entities.EcoProfile.update(profile.id, {
+    const { data: updated } = await supabase.from('eco_profiles').update({
       eco_points: (profile.eco_points || 0) - reward.eco_points_cost,
       redeemed_rewards: [...redeemed],
-    });
+    }).eq('id', profile.id).select().single();
     setProfile(updated);
     setRedeeming(null);
   };

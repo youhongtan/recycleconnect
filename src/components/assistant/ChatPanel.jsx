@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import { base44 } from "@/api/base44Client";
 import { Send, Loader2, Leaf } from "lucide-react";
 
 const SUGGESTIONS = [
@@ -21,10 +20,21 @@ export default function ChatPanel() {
     setMessages((m) => [...m, { role: "user", text: question }]);
     setInput("");
     setLoading(true);
-    const answer = await base44.integrations.Core.InvokeLLM({
-      prompt: `You are the RecycleConnect Eco Assistant helping people in Malaysia. Answer simply, accurately and in 3-5 short sentences. Mention Malaysian context (councils, malls, scrap dealers) where useful.\n\nQuestion: ${question}`,
-    });
-    setMessages((m) => [...m, { role: "ai", text: answer }]);
+    try {
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt: `Question: ${question}` }),
+      });
+      const data = await res.json();
+      if (data.error) {
+        setMessages((m) => [...m, { role: "ai", text: `Error: ${data.error}` }]);
+      } else {
+        setMessages((m) => [...m, { role: "ai", text: data.answer }]);
+      }
+    } catch {
+      setMessages((m) => [...m, { role: "ai", text: "Sorry, I couldn't process that. Please try again." }]);
+    }
     setLoading(false);
   };
 

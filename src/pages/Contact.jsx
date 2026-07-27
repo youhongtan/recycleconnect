@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { base44 } from "@/api/base44Client";
+import { supabase } from "@/api/supabaseClient";
 import SectionHeading from "@/components/common/SectionHeading";
 import Reveal from "@/components/common/Reveal";
 import { Send, CheckCircle2, Instagram, Facebook, Youtube } from "lucide-react";
@@ -26,10 +26,11 @@ export default function Contact() {
     setBusy(true);
     setError("");
     try {
-      await base44.entities.Feedback.create(form);
+      const { error: insertError } = await supabase.from('feedback').insert(form);
+      if (insertError) throw insertError;
       setSent(true);
       setForm({ name: "", email: "", subject: "", message: "" });
-    } catch (err) {
+    } catch {
       setError("Sorry, we couldn't send that. Please try again.");
     }
     setBusy(false);

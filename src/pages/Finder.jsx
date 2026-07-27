@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { base44 } from "@/api/base44Client";
+import { supabase } from "@/api/supabaseClient";
 import { Search, Loader2 } from "lucide-react";
 import SectionHeading from "@/components/common/SectionHeading";
 import Reveal from "@/components/common/Reveal";
@@ -15,8 +15,8 @@ export default function Finder() {
   const [filters, setFilters] = useState([]);
 
   useEffect(() => {
-    base44.entities.RecyclingCentre.list().then((data) => {
-      setCentres(data);
+    supabase.from('recycling_centres').select('*').then(({ data }) => {
+      setCentres(data || []);
       setLoading(false);
     });
   }, []);

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { base44 } from "@/api/base44Client";
+import { supabase } from "@/api/supabaseClient";
 import { Search, Shield, User as UserIcon, Loader2 } from "lucide-react";
 
 export default function UserManagement() {
@@ -8,9 +8,21 @@ export default function UserManagement() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    base44.entities.User.list()
-      .then((u) => { setUsers(u); setLoading(false); })
-      .catch(() => setLoading(false));
+    (async () => {
+      const { data: roles } = await supabase.from('user_roles').select('user_id, role');
+      const { data: authUsers } = await supabase.auth.admin.listUsers();
+      const merged = (authUsers?.users || []).map((au) => {
+        const roleEntry = (roles || []).find((r) => r.user_id === au.id);
+        return {
+          id: au.id,
+          email: au.email,
+          full_name: au.user_metadata?.full_name || '',
+          role: roleEntry?.role || 'user',
+        };
+      });
+      setUsers(merged);
+      setLoading(false);
+    })();
   }, []);
 
   const filtered = users.filter((u) =>
@@ -20,8 +32,12 @@ export default function UserManagement() {
 
   const toggleRole = async (u) => {
     const newRole = u.role === "admin" ? "user" : "admin";
-    await base44.entities.User.update(u.id, { role: newRole });
-    setUsers((prev) => prev.map((x) => (x.id === u.id ? { ...x, role: newRole } : x)));
+    const { error } = await supabase
+      .from('user_roles')
+      .upsert({ user_id: u.id, role: newRole }, { onConflict: 'user_id' });
+    if (!error) {
+      setUsers((prev) => prev.map((x) => (x.id === u.id ? { ...x, role: newRole } : x)));
+    }
   };
 
   if (loading) return <p className="flex items-center gap-2 text-muted-foreground"><Loader2 className="w-4 h-4 animate-spin" /> Loading users…</p>;

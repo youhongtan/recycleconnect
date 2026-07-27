@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { base44 } from "@/api/base44Client";
+import { supabase } from "@/api/supabaseClient";
 import { Upload, Loader2, Recycle } from "lucide-react";
 import { Image } from "@/components/ui/image";
 
@@ -18,21 +18,40 @@ export default function ScanPanel() {
   const [preview, setPreview] = useState(null);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
+  const [error, setError] = useState("");
 
   const onFile = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
     setResult(null);
+    setError("");
     setLoading(true);
     setPreview(URL.createObjectURL(file));
-    const { file_url } = await base44.integrations.Core.UploadFile({ file });
-    const res = await base44.integrations.Core.InvokeLLM({
-      prompt:
-        "You are a Malaysian recycling expert. Look at this photo and identify the item. Reply with: the item name, its material, whether it is recyclable in Malaysia (and any conditions), step-by-step preparation instructions, and one short environmental tip. Keep language simple and friendly.",
-      file_urls: [file_url],
-      response_json_schema: SCHEMA,
-    });
-    setResult(res);
+
+    try {
+      const fileExt = file.name.split(".").pop();
+      const fileName = `${Date.now()}_${Math.random().toString(36).slice(2)}.${fileExt}`;
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from("uploads")
+        .upload(fileName, file);
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage.from("uploads").getPublicUrl(fileName);
+
+      const res = await fetch("/api/scan", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          prompt: "You are a Malaysian recycling expert. Look at this photo and identify the item. Reply with: the item name, its material, whether it is recyclable in Malaysia (and any conditions), step-by-step preparation instructions, and one short environmental tip. Keep language simple and friendly.",
+          imageUrl: publicUrl,
+        }),
+      });
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      setResult(data);
+    } catch (err) {
+      setError(err.message || "Failed to analyze the image. Please try again.");
+    }
     setLoading(false);
   };
 
@@ -48,6 +67,12 @@ export default function ScanPanel() {
         <span className="font-medium">Upload or take a photo</span>
         <input type="file" accept="image/*" capture="environment" className="sr-only" onChange={onFile} />
       </label>
+
+      {error && (
+        <div className="mt-4 p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
+          {error}
+        </div>
+      )}
 
       {preview && (
         <div className="mt-6 relative overflow-hidden rounded-3xl">

@@ -1,37 +1,32 @@
 import React, { useEffect, useState } from "react";
-import { base44 } from "@/api/base44Client";
+import { supabase } from "@/api/supabaseClient";
+import { useAuth } from "@/lib/AuthContext";
 import { useI18n, LANGS } from "@/lib/i18n";
-import { getOrCreateProfile } from "@/lib/ecoProfile";
 import ThemeToggle from "@/components/common/ThemeToggle";
 import { User, Globe, Palette, LogOut, Save, Loader2, Check } from "lucide-react";
 
 export default function Settings() {
   const { lang, setLang, t } = useI18n();
-  const [profile, setProfile] = useState(null);
-  const [user, setUser] = useState(null);
+  const { user, profile, logout } = useAuth();
   const [name, setName] = useState("");
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    (async () => {
-      const { user: u, profile: p } = await getOrCreateProfile();
-      setUser(u);
-      setProfile(p);
-      setName(p?.display_name || u?.full_name || "");
-      setLoading(false);
-    })();
-  }, []);
+    if (profile) {
+      setName(profile.display_name || "");
+    }
+    setLoading(false);
+  }, [profile]);
 
   const save = async () => {
     setSaving(true);
     if (profile) {
-      const updated = await base44.entities.EcoProfile.update(profile.id, { display_name: name });
-      setProfile(updated);
+      await supabase.from('eco_profiles').update({ display_name: name }).eq('id', profile.id);
     }
     if (user) {
-      await base44.auth.updateMe({ full_name: name });
+      await supabase.auth.updateUser({ data: { full_name: name } });
     }
     setSaving(false);
     setSaved(true);
@@ -78,7 +73,7 @@ export default function Settings() {
           <ThemeToggle />
         </div>
       </div>
-      <button onClick={() => base44.auth.logout("/")} className="w-full h-12 rounded-full border border-destructive/30 text-destructive font-semibold inline-flex items-center justify-center gap-2 hover:bg-destructive/5">
+      <button onClick={logout} className="w-full h-12 rounded-full border border-destructive/30 text-destructive font-semibold inline-flex items-center justify-center gap-2 hover:bg-destructive/5">
         <LogOut className="w-4 h-4" /> Logout
       </button>
     </div>

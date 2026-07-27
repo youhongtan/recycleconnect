@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { base44 } from "@/api/base44Client";
+import { supabase } from "@/api/supabaseClient";
 import QRCodeImage from "@/components/qr/QRCodeImage";
 import { Download, QrCode, Loader2 } from "lucide-react";
 
@@ -9,12 +9,15 @@ export default function QRManagement() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    base44.entities.RecyclingCentre.list().then((c) => { setCentres(c); setLoading(false); });
+    supabase.from('recycling_centres').select('*').then(({ data }) => {
+      setCentres(data || []);
+      setLoading(false);
+    });
   }, []);
 
   const generate = async (c) => {
     const qrId = c.name.toUpperCase().replace(/[^A-Z]/g, "").slice(0, 8) + "_" + c.id.slice(-4).toUpperCase();
-    const updated = await base44.entities.RecyclingCentre.update(c.id, { qr_code_id: qrId });
+    const { data: updated } = await supabase.from('recycling_centres').update({ qr_code_id: qrId }).eq('id', c.id).select().single();
     setCentres((prev) => prev.map((x) => (x.id === c.id ? updated : x)));
     setSelected(updated);
   };

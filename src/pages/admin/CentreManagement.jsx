@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { base44 } from "@/api/base44Client";
+import { supabase } from "@/api/supabaseClient";
 import { MATERIALS } from "@/lib/recycleData";
 import { Plus, Pencil, Trash2, X, Loader2 } from "lucide-react";
 
@@ -16,17 +16,19 @@ export default function CentreManagement() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
-  const load = () => {
-    base44.entities.RecyclingCentre.list().then((c) => { setCentres(c); setLoading(false); });
+  const load = async () => {
+    const { data } = await supabase.from('recycling_centres').select('*');
+    setCentres(data || []);
+    setLoading(false);
   };
-  useEffect(load, []);
+  useEffect(() => { load(); }, []);
 
   const save = async () => {
     setSaving(true);
     if (editing.id) {
-      await base44.entities.RecyclingCentre.update(editing.id, editing);
+      await supabase.from('recycling_centres').update(editing).eq('id', editing.id);
     } else {
-      await base44.entities.RecyclingCentre.create(editing);
+      await supabase.from('recycling_centres').insert(editing);
     }
     setSaving(false);
     setEditing(null);
@@ -35,7 +37,7 @@ export default function CentreManagement() {
 
   const del = async (c) => {
     if (!confirm(`Delete ${c.name}?`)) return;
-    await base44.entities.RecyclingCentre.delete(c.id);
+    await supabase.from('recycling_centres').delete().eq('id', c.id);
     load();
   };
 

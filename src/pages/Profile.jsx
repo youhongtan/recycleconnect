@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { base44 } from "@/api/base44Client";
+import { useAuth } from "@/lib/AuthContext";
+import { getOrCreateProfile } from "@/lib/ecoProfile";
 import SectionHeading from "@/components/common/SectionHeading";
 import Reveal from "@/components/common/Reveal";
 import ProfileStats from "@/components/profile/ProfileStats";
@@ -11,22 +12,16 @@ import { Loader2, Coins } from "lucide-react";
 import { Link } from "react-router-dom";
 
 export default function Profile() {
+  const { isAuthenticated, navigateToLogin } = useAuth();
   const [user, setUser] = useState(null);
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     (async () => {
-      const me = await base44.auth.me().catch(() => null);
-      setUser(me);
-      if (me) {
-        const existing = await base44.entities.EcoProfile.filter({ created_by_id: me.id });
-        const p = existing[0] || (await base44.entities.EcoProfile.create({
-          display_name: me.full_name, xp: 0, items_recycled: 0, plastic_saved_kg: 0,
-          co2_reduced_kg: 0, streak_days: 1, badges: [],
-        }));
-        setProfile(p);
-      }
+      const { user: u, profile: p } = await getOrCreateProfile();
+      setUser(u);
+      setProfile(p);
       setLoading(false);
     })();
   }, []);
@@ -48,7 +43,7 @@ export default function Profile() {
           subtitle="Sign in to log recycled items, earn XP, unlock badges and climb the leaderboard."
         />
         <button
-          onClick={() => base44.auth.redirectToLogin()}
+          onClick={navigateToLogin}
           className="mt-10 h-14 px-8 rounded-full bg-primary text-primary-foreground font-semibold soft-shadow hover:brightness-110 active:scale-[0.98] transition"
         >
           Sign in to continue
@@ -62,7 +57,7 @@ export default function Profile() {
       <SectionHeading
         align="left"
         eyebrow="Profile"
-        title={`Hello, ${profile.display_name || user.full_name || "Eco Hero"}`}
+        title={`Hello, ${profile.display_name || "Eco Hero"}`}
         subtitle="Every item you log turns into XP, badges and a measurable carbon saving."
       />
       <Reveal>

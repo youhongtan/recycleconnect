@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { base44 } from "@/api/base44Client";
+import { supabase } from "@/api/supabaseClient";
 import { getLevel } from "@/lib/recycleData";
 import { getOrCreateProfile } from "@/lib/ecoProfile";
 import { Trophy, Loader2 } from "lucide-react";
@@ -13,9 +13,9 @@ export default function Leaderboard() {
 
   useEffect(() => {
     (async () => {
-      const all = await base44.entities.EcoProfile.list("", 100).catch(() => []);
-      all.sort((a, b) => (b.eco_points || 0) - (a.eco_points || 0));
-      setProfiles(all);
+      const { data: all } = await supabase.from('eco_profiles').select('*').limit(100);
+      all?.sort((a, b) => (b.eco_points || 0) - (a.eco_points || 0));
+      setProfiles(all || []);
       const { profile: p } = await getOrCreateProfile();
       setMyProfile(p);
       setLoading(false);
