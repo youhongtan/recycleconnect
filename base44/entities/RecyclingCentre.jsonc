@@ -1,0 +1,62 @@
+{
+  "name": "RecyclingCentre",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string"
+    },
+    "address": {
+      "type": "string"
+    },
+    "city": {
+      "type": "string"
+    },
+    "state": {
+      "type": "string"
+    },
+    "lat": {
+      "type": "number"
+    },
+    "lng": {
+      "type": "number"
+    },
+    "hours": {
+      "type": "string"
+    },
+    "contact": {
+      "type": "string"
+    },
+    "materials": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "Plastic",
+          "Paper",
+          "Glass",
+          "Metal",
+          "Electronics",
+          "Batteries",
+          "Clothes",
+          "Cooking Oil"
+        ]
+      }
+    },
+    "pays_cash": {
+      "type": "boolean",
+      "default": false
+    },
+    "reward_points": {
+      "type": "boolean",
+      "default": false
+    },
+    "home_collection": {
+      "type": "boolean",
+      "default": false
+    }
+  },
+  "required": [
+    "name",
+    "address"
+  ]
+}

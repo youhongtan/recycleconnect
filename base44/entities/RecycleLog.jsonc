@@ -1,0 +1,23 @@
+{
+  "name": "RecycleLog",
+  "type": "object",
+  "properties": {
+    "material": {
+      "type": "string"
+    },
+    "quantity": {
+      "type": "number",
+      "default": 1
+    },
+    "weight_kg": {
+      "type": "number",
+      "default": 0
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "material"
+  ]
+}

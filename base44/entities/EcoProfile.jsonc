@@ -1,0 +1,36 @@
+{
+  "name": "EcoProfile",
+  "type": "object",
+  "properties": {
+    "xp": {
+      "type": "number",
+      "default": 0
+    },
+    "items_recycled": {
+      "type": "number",
+      "default": 0
+    },
+    "plastic_saved_kg": {
+      "type": "number",
+      "default": 0
+    },
+    "co2_reduced_kg": {
+      "type": "number",
+      "default": 0
+    },
+    "streak_days": {
+      "type": "number",
+      "default": 0
+    },
+    "badges": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "display_name": {
+      "type": "string"
+    }
+  },
+  "required": []
+}
