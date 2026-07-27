@@ -30,8 +30,23 @@ import UserManagement from '@/pages/admin/UserManagement';
 import CentreManagement from '@/pages/admin/CentreManagement';
 import QRManagement from '@/pages/admin/QRManagement';
 
+const AUTH_ROUTES = ['/login', '/register', '/forgot-password', '/reset-password'];
+
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
+  const location = useLocation();
+
+  // Auth pages render without requiring authentication — prevents redirect loop
+  if (AUTH_ROUTES.includes(location.pathname)) {
+    return (
+      <Routes>
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
+      </Routes>
+    );
+  }
 
   if (isLoadingPublicSettings || isLoadingAuth) {
     return (
