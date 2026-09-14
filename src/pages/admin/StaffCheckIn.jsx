@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { supabase } from "@/api/supabaseClient";
-import { Loader2, Search, CheckCircle2, MapPin, Coins, User } from "lucide-react";
+import { Loader2, Search, CheckCircle2, Coins, User } from "lucide-react";
 
 export default function StaffCheckIn() {
   const [centres, setCentres] = useState([]);

@@ -9,16 +9,24 @@ export default function UserManagement() {
 
   useEffect(() => {
     (async () => {
-      const { data: roles } = await supabase.from('user_roles').select('user_id, role');
-      const { data: authUsers } = await supabase.auth.admin.listUsers();
-      const merged = (authUsers?.users || []).map((au) => {
-        const roleEntry = (roles || []).find((r) => r.user_id === au.id);
+      const [{ data: profiles }, { data: roles }] = await Promise.all([
+        supabase.from('eco_profiles').select('user_id, display_name, email'),
+        supabase.from('user_roles').select('user_id, role'),
+      ]);
+      const merged = (profiles || []).map((p) => {
+        const roleEntry = (roles || []).find((r) => r.user_id === p.user_id);
         return {
-          id: au.id,
-          email: au.email,
-          full_name: au.user_metadata?.full_name || '',
+          id: p.user_id,
+          email: p.email || '',
+          full_name: p.display_name || '',
           role: roleEntry?.role || 'user',
         };
+      });
+      // Include roles rows that have no profile yet (e.g. profile trigger missed)
+      (roles || []).forEach((r) => {
+        if (!merged.find((u) => u.id === r.user_id)) {
+          merged.push({ id: r.user_id, email: '', full_name: '', role: r.role });
+        }
       });
       setUsers(merged);
       setLoading(false);

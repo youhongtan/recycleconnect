@@ -17,7 +17,7 @@ export default function AdminDashboard() {
         { data: profiles },
         { count: centresCount },
       ] = await Promise.all([
-        supabase.from('user_roles').select('*', { count: 'exact', head: true }),
+        supabase.from('eco_profiles').select('*', { count: 'exact', head: true }),
         supabase.from('recycle_logs').select('*').limit(500),
         supabase.from('eco_profiles').select('eco_points'),
         supabase.from('recycling_centres').select('*', { count: 'exact', head: true }),

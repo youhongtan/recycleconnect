@@ -115,21 +115,15 @@ CREATE TABLE IF NOT EXISTS user_roles (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Storage: ensure uploads bucket exists (run separately if bucket already created)
+-- Storage: ensure uploads bucket exists.
+-- NOTE: do NOT manage storage.objects policies from this file.
+-- The SQL editor role is not the owner of storage.objects, so any
+-- ALTER/DROP/CREATE POLICY on it aborts the whole run with
+-- "must be owner of table objects". Manage storage policies via
+-- Dashboard > Storage > uploads > Policies instead (already done).
 INSERT INTO storage.buckets (id, name, public, avif_autodetection, file_size_limit, allowed_mime_types)
 VALUES ('uploads', 'uploads', TRUE, FALSE, 10485760, ARRAY['image/png', 'image/jpeg', 'image/webp', 'image/gif'])
 ON CONFLICT (id) DO NOTHING;
-
--- Storage RLS for uploads bucket
-ALTER TABLE storage.objects ENABLE ROW LEVEL SECURITY;
-
-DROP POLICY IF EXISTS "public_upload_images" ON storage.objects;
-CREATE POLICY "public_upload_images" ON storage.objects
-  FOR INSERT WITH CHECK (bucket_id = 'uploads');
-
-DROP POLICY IF EXISTS "public_read_images" ON storage.objects;
-CREATE POLICY "public_read_images" ON storage.objects
-  FOR SELECT USING (bucket_id = 'uploads');
 
 -- Indexes (IF NOT EXISTS)
 CREATE INDEX IF NOT EXISTS idx_eco_profiles_user_id ON eco_profiles(user_id);
@@ -152,6 +146,17 @@ ALTER TABLE challenges ENABLE ROW LEVEL SECURITY;
 ALTER TABLE feedback ENABLE ROW LEVEL SECURITY;
 ALTER TABLE user_roles ENABLE ROW LEVEL SECURITY;
 
+-- Helper: non-recursive admin check (avoids infinite recursion on user_roles policies)
+CREATE OR REPLACE FUNCTION public.is_admin()
+RETURNS boolean
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT EXISTS (SELECT 1 FROM public.user_roles WHERE user_id = auth.uid() AND role = 'admin');
+$$;
+
 -- Policies: drop then create to allow re-runs
 DROP POLICY IF EXISTS "users_read_own_profile" ON eco_profiles;
 DROP POLICY IF EXISTS "users_insert_own_profile" ON eco_profiles;
@@ -160,29 +165,29 @@ DROP POLICY IF EXISTS "admin_all_eco_profiles" ON eco_profiles;
 CREATE POLICY "users_read_own_profile" ON eco_profiles FOR SELECT USING (auth.uid() = user_id);
 CREATE POLICY "users_insert_own_profile" ON eco_profiles FOR INSERT WITH CHECK (auth.uid() = user_id);
 CREATE POLICY "users_update_own_profile" ON eco_profiles FOR UPDATE USING (auth.uid() = user_id);
-CREATE POLICY "admin_all_eco_profiles" ON eco_profiles FOR ALL USING (EXISTS (SELECT 1 FROM user_roles WHERE user_id = auth.uid() AND role = 'admin'));
+CREATE POLICY "admin_all_eco_profiles" ON eco_profiles FOR ALL USING (public.is_admin());
 
 DROP POLICY IF EXISTS "users_read_own_logs" ON recycle_logs;
 DROP POLICY IF EXISTS "users_insert_own_logs" ON recycle_logs;
 DROP POLICY IF EXISTS "admin_all_recycle_logs" ON recycle_logs;
 CREATE POLICY "users_read_own_logs" ON recycle_logs FOR SELECT USING (auth.uid() = user_id);
 CREATE POLICY "users_insert_own_logs" ON recycle_logs FOR INSERT WITH CHECK (auth.uid() = user_id);
-CREATE POLICY "admin_all_recycle_logs" ON recycle_logs FOR ALL USING (EXISTS (SELECT 1 FROM user_roles WHERE user_id = auth.uid() AND role = 'admin'));
+CREATE POLICY "admin_all_recycle_logs" ON recycle_logs FOR ALL USING (public.is_admin());
 
 DROP POLICY IF EXISTS "public_read_centres" ON recycling_centres;
 DROP POLICY IF EXISTS "admin_all_centres" ON recycling_centres;
 CREATE POLICY "public_read_centres" ON recycling_centres FOR SELECT USING (TRUE);
-CREATE POLICY "admin_all_centres" ON recycling_centres FOR ALL USING (EXISTS (SELECT 1 FROM user_roles WHERE user_id = auth.uid() AND role = 'admin'));
+CREATE POLICY "admin_all_centres" ON recycling_centres FOR ALL USING (public.is_admin());
 
 DROP POLICY IF EXISTS "public_read_rewards" ON rewards;
 DROP POLICY IF EXISTS "admin_all_rewards" ON rewards;
 CREATE POLICY "public_read_rewards" ON rewards FOR SELECT USING (TRUE);
-CREATE POLICY "admin_all_rewards" ON rewards FOR ALL USING (EXISTS (SELECT 1 FROM user_roles WHERE user_id = auth.uid() AND role = 'admin'));
+CREATE POLICY "admin_all_rewards" ON rewards FOR ALL USING (public.is_admin());
 
 DROP POLICY IF EXISTS "public_read_challenges" ON challenges;
 DROP POLICY IF EXISTS "admin_all_challenges" ON challenges;
 CREATE POLICY "public_read_challenges" ON challenges FOR SELECT USING (TRUE);
-CREATE POLICY "admin_all_challenges" ON challenges FOR ALL USING (EXISTS (SELECT 1 FROM user_roles WHERE user_id = auth.uid() AND role = 'admin'));
+CREATE POLICY "admin_all_challenges" ON challenges FOR ALL USING (public.is_admin());
 
 DROP POLICY IF EXISTS "public_read_reviews" ON reviews;
 DROP POLICY IF EXISTS "users_insert_reviews" ON reviews;
@@ -193,17 +198,19 @@ DROP POLICY IF EXISTS "users_insert_feedback" ON feedback;
 CREATE POLICY "users_insert_feedback" ON feedback FOR INSERT WITH CHECK (TRUE);
 
 DROP POLICY IF EXISTS "admin_read_feedback" ON feedback;
-CREATE POLICY "admin_read_feedback" ON feedback FOR SELECT USING (EXISTS (SELECT 1 FROM user_roles WHERE user_id = auth.uid() AND role = 'admin'));
+CREATE POLICY "admin_read_feedback" ON feedback FOR SELECT USING (public.is_admin());
 
 DROP POLICY IF EXISTS "admin_delete_feedback" ON feedback;
-CREATE POLICY "admin_delete_feedback" ON feedback FOR DELETE USING (EXISTS (SELECT 1 FROM user_roles WHERE user_id = auth.uid() AND role = 'admin'));
+CREATE POLICY "admin_delete_feedback" ON feedback FOR DELETE USING (public.is_admin());
 
 DROP POLICY IF EXISTS "users_read_own_role" ON user_roles;
 DROP POLICY IF EXISTS "admin_read_all_roles" ON user_roles;
 DROP POLICY IF EXISTS "admin_update_roles" ON user_roles;
+DROP POLICY IF EXISTS "admin_insert_roles" ON user_roles;
 CREATE POLICY "users_read_own_role" ON user_roles FOR SELECT USING (auth.uid() = user_id);
-CREATE POLICY "admin_read_all_roles" ON user_roles FOR SELECT USING (EXISTS (SELECT 1 FROM user_roles WHERE user_id = auth.uid() AND role = 'admin'));
-CREATE POLICY "admin_update_roles" ON user_roles FOR UPDATE USING (EXISTS (SELECT 1 FROM user_roles WHERE user_id = auth.uid() AND role = 'admin'));
+CREATE POLICY "admin_read_all_roles" ON user_roles FOR SELECT USING (public.is_admin());
+CREATE POLICY "admin_update_roles" ON user_roles FOR UPDATE USING (public.is_admin()) WITH CHECK (public.is_admin());
+CREATE POLICY "admin_insert_roles" ON user_roles FOR INSERT WITH CHECK (public.is_admin());
 
 -- Auto-create eco_profile and user_role on signup
 CREATE OR REPLACE FUNCTION public.handle_new_user()

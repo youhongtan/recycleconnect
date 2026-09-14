@@ -9,7 +9,7 @@ export default function Messages() {
   const [notifying, setNotifying] = useState(null);
   const [notifyResult, setNotifyResult] = useState("");
 
-  const fetch = async () => {
+  const loadMessages = async () => {
     setLoading(true);
     setError("");
     const { data, error: err } = await supabase.from('feedback').select('*').order('created_at', { ascending: false });
@@ -18,37 +18,40 @@ export default function Messages() {
     setLoading(false);
   };
 
-  useEffect(() => { fetch(); }, []);
+  useEffect(() => { loadMessages(); }, []);
 
   const remove = async (id) => {
-    await supabase.from('feedback').delete().eq('id', id);
-    setMessages((m) => m.filter((x) => x.id !== id));
+    const { error: delErr } = await supabase.from('feedback').delete().eq('id', id);
+    if (!delErr) setMessages((m) => m.filter((x) => x.id !== id));
+  };
+
+  const postNotify = async (payload) => {
+    const r = await globalThis.fetch('/api/notify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    if (!r.ok) {
+      const text = await r.text().catch(() => '');
+      throw new Error(text || `HTTP ${r.status}`);
+    }
+    return r.json();
   };
 
   const sendTest = async () => {
     setNotifyResult("sending");
     try {
-      const r = await fetch('/api/notify', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: 'Test', email: 'youhong.tyh@gmail.com', subject: 'Test from Admin', message: 'This is a test email from the admin panel.' }),
-      });
-      const data = await r.json();
+      const data = await postNotify({ name: 'Test', email: 'youhong.tyh@gmail.com', subject: 'Test from Admin', message: 'This is a test email from the admin panel.' });
       setNotifyResult(data.notified ? "sent" : `fail: ${JSON.stringify(data.error || data.reason)}`);
-    } catch { setNotifyResult("fail: network error"); }
+    } catch (e) { setNotifyResult(`fail: ${e.message || 'network error'}`); }
   };
 
   const notifyOne = async (m) => {
     setNotifying(m.id);
     try {
-      const r = await fetch('/api/notify', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: m.name, email: m.email, subject: m.subject, message: m.message }),
-      });
-      const data = await r.json();
+      const data = await postNotify({ name: m.name, email: m.email, subject: m.subject, message: m.message });
       setNotifying(data.notified ? null : "error");
-    } catch { setNotifying(null); }
+    } catch { setNotifying("error"); }
     setTimeout(() => setNotifying(null), 2000);
   };
 
@@ -63,7 +66,7 @@ export default function Messages() {
           <button onClick={sendTest} className="h-10 px-4 rounded-2xl border border-border text-sm font-semibold inline-flex items-center gap-2 hover:bg-primary/8">
             <Send className="w-4 h-4" /> Test Email
           </button>
-          <button onClick={fetch} className="h-10 px-4 rounded-2xl bg-primary text-primary-foreground text-sm font-semibold inline-flex items-center gap-2 hover:brightness-110">
+          <button onClick={loadMessages} className="h-10 px-4 rounded-2xl bg-primary text-primary-foreground text-sm font-semibold inline-flex items-center gap-2 hover:brightness-110">
             <RefreshCw className="w-4 h-4" /> Refresh
           </button>
         </div>

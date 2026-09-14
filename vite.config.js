@@ -147,6 +147,36 @@ module.exports = defineConfig(({ mode }) => {
               }
             });
           });
+
+          server.middlewares.use('/api/notify', async (req, res) => {
+            if (req.method !== 'POST') { res.statusCode = 405; res.end(JSON.stringify({ error: 'Method not allowed' })); return; }
+            let body = '';
+            req.on('data', (c) => body += c);
+            req.on('end', async () => {
+              try {
+                const { name, email, subject, message } = JSON.parse(body);
+                if (!name || !email || !message) { res.statusCode = 400; res.end(JSON.stringify({ error: 'name, email, message required' })); return; }
+                const apiKey = env.RESEND_API_KEY;
+                if (!apiKey) { res.setHeader('Content-Type', 'application/json'); res.end(JSON.stringify({ notified: false, reason: 'RESEND_API_KEY not configured' })); return; }
+                const r = await fetch('https://api.resend.com/emails', {
+                  method: 'POST',
+                  headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    from: 'RecycleConnect <onboarding@resend.dev>',
+                    to: env.ADMIN_EMAIL || 'youhong.tyh@gmail.com',
+                    subject: `[RecycleConnect] ${subject || 'New message'} from ${name}`,
+                    text: `From: ${name} (${email})\nSubject: ${subject || '—'}\n\n${message}`,
+                  }),
+                });
+                const data = await r.json();
+                res.setHeader('Content-Type', 'application/json');
+                if (data.id) res.end(JSON.stringify({ notified: true }));
+                else res.end(JSON.stringify({ notified: false, error: data }));
+              } catch (e) {
+                res.statusCode = 500; res.end(JSON.stringify({ notified: false, error: e.message }));
+              }
+            });
+          });
         },
       },
     ],
