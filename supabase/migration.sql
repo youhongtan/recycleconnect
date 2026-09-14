@@ -125,6 +125,9 @@ INSERT INTO storage.buckets (id, name, public, avif_autodetection, file_size_lim
 VALUES ('uploads', 'uploads', TRUE, FALSE, 10485760, ARRAY['image/png', 'image/jpeg', 'image/webp', 'image/gif'])
 ON CONFLICT (id) DO NOTHING;
 
+-- Backfill columns on tables created before they existed
+ALTER TABLE eco_profiles ADD COLUMN IF NOT EXISTS email TEXT;
+
 -- Indexes (IF NOT EXISTS)
 CREATE INDEX IF NOT EXISTS idx_eco_profiles_user_id ON eco_profiles(user_id);
 CREATE INDEX IF NOT EXISTS idx_recycle_logs_user_id ON recycle_logs(user_id);
