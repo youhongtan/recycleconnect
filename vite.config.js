@@ -164,6 +164,7 @@ module.exports = defineConfig(({ mode }) => {
                   body: JSON.stringify({
                     from: 'RecycleConnect <onboarding@resend.dev>',
                     to: env.ADMIN_EMAIL || 'youhong.tyh@gmail.com',
+                    reply_to: email,
                     subject: `[RecycleConnect] ${subject || 'New message'} from ${name}`,
                     text: `From: ${name} (${email})\nSubject: ${subject || '—'}\n\n${message}`,
                   }),

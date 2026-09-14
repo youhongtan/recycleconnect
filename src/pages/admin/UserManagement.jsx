@@ -18,7 +18,9 @@ export default function UserManagement() {
         return {
           id: p.user_id,
           email: p.email || '',
-          full_name: p.display_name || '',
+          full_name: (p.display_name && p.display_name.trim())
+            || (p.email ? p.email.split('@')[0] : '')
+            || 'Eco Hero',
           role: roleEntry?.role || 'user',
         };
       });

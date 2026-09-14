@@ -22,11 +22,13 @@ export default function Settings() {
 
   const save = async () => {
     setSaving(true);
+    const cleanName = name.trim() || profile?.display_name || user?.user_metadata?.full_name || user?.user_metadata?.name || 'Eco Hero';
+    setName(cleanName);
     if (profile) {
-      await supabase.from('eco_profiles').update({ display_name: name }).eq('id', profile.id);
+      await supabase.from('eco_profiles').update({ display_name: cleanName }).eq('id', profile.id);
     }
     if (user) {
-      await supabase.auth.updateUser({ data: { full_name: name } });
+      await supabase.auth.updateUser({ data: { full_name: cleanName, name: cleanName } });
     }
     setSaving(false);
     setSaved(true);

@@ -12,11 +12,16 @@ export async function getOrCreateProfile() {
 
   if (existing) return { user, profile: existing };
 
+  const fallbackName = user.user_metadata?.full_name
+    || user.user_metadata?.name
+    || (user.email ? user.email.split('@')[0] : '')
+    || 'Eco Hero';
+
   const { data: profile } = await supabase
     .from('eco_profiles')
     .insert({
       user_id: user.id,
-      display_name: user.user_metadata?.full_name || 'Eco Hero',
+      display_name: fallbackName,
       email: user.email,
       xp: 0,
       eco_points: 0,

@@ -217,7 +217,14 @@ CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$
 BEGIN
   INSERT INTO public.eco_profiles (user_id, display_name, email)
-  VALUES (NEW.id, COALESCE(NEW.raw_user_meta_data->>'full_name', 'Eco Hero'), NEW.email)
+  VALUES (NEW.id,
+    COALESCE(
+      NULLIF(NEW.raw_user_meta_data->>'full_name', ''),
+      NULLIF(NEW.raw_user_meta_data->>'name', ''),
+      NULLIF(SPLIT_PART(COALESCE(NEW.email, ''), '@', 1), ''),
+      'Eco Hero'
+    ),
+    NEW.email)
   ON CONFLICT (user_id) DO NOTHING;
   INSERT INTO public.user_roles (user_id, role)
   VALUES (NEW.id, 'user')
