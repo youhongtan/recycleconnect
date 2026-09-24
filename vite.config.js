@@ -17,7 +17,7 @@ module.exports = defineConfig(({ mode }) => {
   }
 
   const GROQ_MODELS = ['llama-3.1-8b-instant', 'llama-3.3-70b-versatile', 'openai/gpt-oss-20b'];
-  const GEMINI_MODELS = ['gemini-3.6-flash', 'gemini-2.5-flash'];
+  const GEMINI_MODELS = ['gemini-3.6-flash', 'gemini-3.5-flash'];
 
   function modelUnavailable(msg) {
     return /no longer|not found|not available|does not exist|model.*(?:unavailable|deprecated)/i.test(msg);

@@ -4,7 +4,7 @@ function isComplex(prompt) {
 }
 
 const GROQ_MODELS = ['llama-3.1-8b-instant', 'llama-3.3-70b-versatile', 'openai/gpt-oss-20b'];
-const GEMINI_MODELS = ['gemini-3.6-flash', 'gemini-2.5-flash'];
+const GEMINI_MODELS = ['gemini-3.6-flash', 'gemini-3.5-flash'];
 
 async function callGroq(prompt, apiKey, model) {
   const r = await fetch('https://api.groq.com/openai/v1/chat/completions', {
